@@ -36,7 +36,6 @@ interface HomeProps {
 
 export default function Home({ postsPagination }: HomeProps) {
   const { next_page, results } = postsPagination;
-  console.log('results = ', results)
 
   const formattedPost = results.map(post => {
     return {
