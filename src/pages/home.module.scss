@@ -1,53 +1,47 @@
 .posts {
-    margin-top: 2rem;
+  a {
+    display: block;
 
-    > a {
-        display: block;
+    & + a {
+      margin-top: 3rem;
     }
 
-    a + a {
-        margin-top: 3rem;
+    strong {
+      display: block;
+      font-size: 1.75rem;
+      line-height: 2.125rem;
+      color: var(--heading);
+      letter-spacing: -0.5px;
+
+      transition: filter 0.2s;
     }
 
-    button {
-        border: none;
-        background: transparent;
-        font-size: 1.125rem;
-        font-weight: 600;
-        color: var(--pink-100);
-        margin-top: 4rem;
-    }
-}
-
-.postExcerpt {
-    h1 {
-        font-size: 1.75rem;
-        font-weight: bold;
-        color: var(--white-0);
+    &:hover strong {
+      filter: brightness(0.8);
     }
 
     p {
-        margin-top: 0.5rem;
-        font-size: 1.125rem;
+      font-size: 1.125rem;
+      line-height: 1.375rem;
+      margin-top: 0.5rem;
+      color: var(--body);
     }
+  }
 
-    
-    > span {
-        display: flex;
-        align-items: center;
-        padding-top: 1.5rem;
-        font-size: 0.95rem;
-        
-        time {
-            font-size: 0.875rem;
-        }
+  button {
+    background: transparent;
+    border: none;
 
-        svg {
-            margin-right: 0.5rem;
-        }
+    color: var(--highlight);
+    margin-top: 4rem;
+    font-weight: 600;
+    font-size: 1.125;
+    line-height: 1.375rem;
 
-        time + svg {
-            margin-left: 1.625rem;
-        }
+    transition: filter 0.2s;
+
+    &:hover {
+      filter: brightness(0.8);
     }
+  }
 }

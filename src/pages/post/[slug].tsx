@@ -1,24 +1,26 @@
 import { GetStaticPaths, GetStaticProps } from 'next';
+import Head from 'next/head';
 
-import Head from "next/head";
-import { FiCalendar, FiClock, FiUser } from "react-icons/fi";
-import Header from "../../components/Header";
+import { FiCalendar, FiUser, FiClock } from 'react-icons/fi';
+
+import Prismic from '@prismicio/client';
 
 import { getPrismicClient } from '../../services/prismic';
 
-import Prismic from '@prismicio/client';
-import { RichText } from 'prismic-dom';
-
 import commonStyles from '../../styles/common.module.scss';
 import styles from './post.module.scss';
+
+import Header from '../../components/Header';
+import { RichText } from 'prismic-dom';
+
+import { formatDate } from '../../utils';
 import { useRouter } from 'next/router';
-import { ptBR } from 'date-fns/locale';
-import format from 'date-fns/format';
 
 interface Post {
   first_publication_date: string | null;
   data: {
     title: string;
+    subtitle: string;
     banner: {
       url: string;
     };
@@ -37,91 +39,90 @@ interface PostProps {
 }
 
 export default function Post({ post }: PostProps) {
-  const totalWords = post.data.content.reduce((total, contentItem) => {
-    total += contentItem.heading.split(' ').length;
-    const body = contentItem.body.map((bodyItem) => bodyItem.text.split(' ').length);
-    body.map((bodyItem) => {total += bodyItem})
-
-    return total;
-  }, 0);
-
-  const totalMinutesReading = Math.ceil( totalWords / 200 );
-
   const router = useRouter();
 
-  const formattedDate = format(
-    new Date(post.first_publication_date), 
-    "dd MMM yyyy", 
-    { locale: ptBR }
-  )
+  if (router.isFallback) {
+    return <h1>Carregando...</h1>;
+  }
 
-  return router.isFallback 
-    ? ( <h1>Carregando...</h1> )
-    : (
-      <>
-        <Head>
-          <title>{`${ post.data.title } | spacetraveling`}</title>
-        </Head>
+  const totalWords = post.data.content.reduce(
+    (totalContent, currentContent) => {
+      const headingWords = currentContent.heading?.split(' ').length || 0;
 
-        <Header />
+      const bodyWords = currentContent.body.reduce((totalBody, currentBody) => {
+        const textWords = currentBody.text.split(' ').length;
+        return totalBody + textWords;
+      }, 0);
 
-        <img src={ post.data.banner.url } alt="banner" className={styles.banner} />
+      return totalContent + headingWords + bodyWords;
+    },
+    0
+  );
 
-        <main className={commonStyles.commonContainer}>
-          <article className={styles.postContainer}>
-            <div className={styles.postHead}>
-              <h1>{ post.data.title }</h1>
+  const timeEstimmed = Math.ceil(totalWords / 200);
 
-              <div>
-                <FiCalendar />
+  return (
+    <>
+      <Head>
+        <title>{post.data.title} | spacetraveling</title>
+      </Head>
 
-                <time>{ formattedDate }</time>
+      <Header />
 
-                <FiUser />
-
-                <span>{ post.data.author }</span>
-
-                <FiClock />
-
-                <span>{`${ totalMinutesReading } min`}</span>
-              </div>
-            </div>
-
-            {
-              post.data.content.map(content => (
-                <div key={ content.heading }>
-                  <h2>{content.heading}</h2>
-                  <div 
-                    className={ styles.postBody }
-                    dangerouslySetInnerHTML={{ __html: RichText.asHtml( content.body ) }}
-                  />
-                </div>
-              ))
-            } 
-          </article>
-        </main>
-      </>
-    );
+      <img src="/teste.png" alt="banner" className={styles.banner} />
+      <main className={commonStyles.container}>
+        <article className={styles.post}>
+          <h1>{post.data.title}</h1>
+          <div className={commonStyles.info}>
+            <time>
+              <FiCalendar />
+              {formatDate(post.first_publication_date)}
+            </time>
+            <span>
+              <FiUser />
+              {post.data.author}
+            </span>
+            <time>
+              <FiClock />
+              {timeEstimmed} min
+            </time>
+          </div>
+          {post.data.content.map(content => {
+            return (
+              <section key={content.heading} className={styles.postContent}>
+                <h2>{content.heading}</h2>
+                <div
+                  dangerouslySetInnerHTML={{
+                    __html: RichText.asHtml(content.body),
+                  }}
+                ></div>
+              </section>
+            );
+          })}
+        </article>
+      </main>
+    </>
+  );
 }
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const prismic = getPrismicClient();
-  const posts = await prismic.query(
-    Prismic.Predicates.at( 'document.type', 'post' )
-  );
+  const posts = await prismic.query([
+    Prismic.Predicates.at('document.type', 'posts'),
+  ]);
 
-  const paths = posts.results.map( (post) => {
+  const paths = posts.results.map(post => {
     return {
       params: {
         slug: post.uid,
-      }
-    }
-  })
+      },
+    };
+  });
 
   return {
     paths,
     fallback: true,
-  }  
+  };
 };
 
 export const getStaticProps: GetStaticProps = async context => {
@@ -135,22 +136,22 @@ export const getStaticProps: GetStaticProps = async context => {
     data: {
       title: response.data.title,
       subtitle: response.data.subtitle,
-      author: response.data.author,
       banner: {
-        url: response.data.banner.url
+        url: response.data.banner.url,
       },
-      content: response.data.content.map(contet => {
-        return { 
-          heading: contet.heading, 
-          body: [...contet.body] 
-        }
-      })
-    }
-  }
+      author: response.data.author,
+      content: response.data.content.map(content => {
+        return {
+          heading: content.heading,
+          body: [...content.body],
+        };
+      }),
+    },
+  };
 
   return {
     props: {
-      post
-    }
+      post,
+    },
   };
 };
